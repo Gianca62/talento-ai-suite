@@ -553,8 +553,8 @@ elif menu == "Amministrazione":
                 
                 descrizione = st.text_area("Descrizione Spesa")
                 
-                if st.form_submit_button("Aggiungi Spesa", type="primary"):
-    if importo > 0 and descrizione:
+         if st.form_submit_button("Aggiungi Spesa", type="primary"):
+                    if importo > 0 and descrizione:
         
         # Converitiamo la data nel formato richiesto dal database (YYYY-MM-DD)
         data_db = data_spesa.strftime("%Y-%m-%d")
@@ -1411,3 +1411,4 @@ st.markdown("""
 **TALENTO AI SUITE** - Versione Streamlit Plus | Creato da Giancarlo Tonon
 
 """)
+
