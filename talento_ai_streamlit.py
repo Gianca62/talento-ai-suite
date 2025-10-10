@@ -87,6 +87,7 @@ def save_nuova_spesa(descrizione, importo, categoria, data):
 
 # --- 3. FUNZIONI DI CARICAMENTO (READ) ---
 
+@st.cache_data(ttl=600)
 def fetch_clienti():
     conn = get_db_connection()
     if conn is None: return pd.DataFrame()
@@ -96,8 +97,9 @@ def fetch_clienti():
         st.error(f"Errore durante il caricamento dei clienti: {e}")
         return pd.DataFrame()
     finally:
-        conn.close()
+        if conn: conn.close()
 
+@st.cache_data(ttl=600)
 def fetch_preventivi():
     conn = get_db_connection()
     if conn is None: return pd.DataFrame()
@@ -114,8 +116,9 @@ def fetch_preventivi():
         st.error(f"Errore durante il caricamento dei preventivi: {e}")
         return pd.DataFrame()
     finally:
-        conn.close()
+        if conn: conn.close()
 
+@st.cache_data(ttl=600)
 def fetch_spese():
     conn = get_db_connection()
     if conn is None: return pd.DataFrame()
@@ -125,16 +128,14 @@ def fetch_spese():
         st.error(f"Errore durante il caricamento delle spese: {e}")
         return pd.DataFrame()
     finally:
-        conn.close()
+        if conn: conn.close()
 
 # --- 4. FUNZIONE DATI DEMO ---
 
 def carica_dati_demo():
     """Carica dati demo direttamente nel database."""
+    from datetime import datetime
     
-    # Per semplicità, i dati demo sono codificati qui. 
-    # NOTA: Per un uso reale, si dovrebbe prima pulire le tabelle.
-
     # CLIENTE DEMO 1: Rossi Costruzioni
     save_nuovo_cliente(
         "Rossi Costruzioni SRL",
@@ -152,30 +153,21 @@ def carica_dati_demo():
     )
 
     # PREVENTIVI DEMO (Assumiamo che i primi due clienti abbiano ID 1 e 2)
-    # Questa parte è dipendente dal fatto che i clienti siano stati creati.
     save_nuovo_preventivo(1, "Progetto Ristrutturazione Uffici", 55000.00, "ACCETTATO", 0.35)
     save_nuovo_preventivo(2, "Consulenza Contrattuale", 8200.00, "INVIATO", 0.70)
     
     # SPESE DEMO
-    # NOTA: L'import di datetime in questa funzione risolve l'ultimo errore
     save_nuova_spesa("Caffè e fornitura ufficio", 120.50, "Ufficio", datetime.now().strftime("%Y-%m-%d"))
     save_nuova_spesa("Hosting Supabase", 25.00, "Software", datetime.now().strftime("%Y-%m-%d"))
 
     st.success("Dati demo caricati nel database con successo!")
+    st.cache_data.clear() # Cancella tutta la cache per il ricaricamento dei dati
     st.rerun()
 
 # --- CARICAMENTO DATI PERMANENTI ---
 
 # Carica i dati dal DB all'avvio o al refresh dell'app.
-# Utilizza la cache per velocizzare le operazioni
-@st.cache_data(ttl=600)
-def load_data():
-    clienti_df = fetch_clienti()
-    preventivi_df = fetch_preventivi()
-    spese_df = fetch_spese()
-    return clienti_df, preventivi_df, spese_df
-
-clienti_df, preventivi_df, spese_df = load_data()
+clienti_df, preventivi_df, spese_df = fetch_clienti(), fetch_preventivi(), fetch_spese()
 
 
 # --- INTERFACCIA UTENTE ---
@@ -262,7 +254,7 @@ elif menu == "Gestione Clienti":
                     # Chiamata alla funzione di salvataggio DB
                     if save_nuovo_cliente(nome, referente, email, telefono):
                         st.success(f"Cliente '{nome}' salvato in modo permanente!")
-                        load_data.clear() # Cancella la cache per forzare il ricaricamento
+                        st.cache_data.clear()
                         st.rerun()
                 else:
                     st.error("Il Nome Azienda è obbligatorio.")
@@ -307,7 +299,7 @@ elif menu == "Gestione Preventivi":
                         # Chiamata alla funzione di salvataggio DB
                         if save_nuovo_preventivo(cliente_id, descrizione, valore, stato, margine):
                             st.success("Preventivo creato e salvato in modo permanente!")
-                            load_data.clear()
+                            st.cache_data.clear()
                             st.rerun()
                     else:
                         st.error("Cliente, Descrizione e Valore sono obbligatori.")
@@ -352,7 +344,6 @@ elif menu == "Gestione Spese":
             with col2:
                 # Progetto non mappato nel DB, mantenuto per interfaccia utente
                 progetti_disponibili = ["Generale"]
-                # AGGIORNAMENTO: Usa il DataFrame permanente dei preventivi
                 if not preventivi_df.empty:
                     progetti_disponibili.extend([p for p in preventivi_df['descrizione']]) 
                     
@@ -363,7 +354,6 @@ elif menu == "Gestione Spese":
             descrizione = st.text_area("Descrizione Spesa *")
             
             if st.form_submit_button("Aggiungi Spesa", type="primary"):
-                # Questa riga era la causa dell'errore di indentazione nei tentativi precedenti!
                 if importo > 0 and descrizione:
                     
                     # Converitiamo la data nel formato richiesto dal database (YYYY-MM-DD)
@@ -377,7 +367,7 @@ elif menu == "Gestione Spese":
                         data_db
                     ):
                         st.success(f"Spesa di €{importo:.2f} salvata in modo permanente!")
-                        load_data.clear()
+                        st.cache_data.clear()
                         st.rerun()
                 else:
                     st.error("Importo e descrizione sono obbligatori!")
@@ -390,12 +380,9 @@ elif menu == "Gestione Spese":
         display_df = spese_df.copy()
         display_df['importo'] = display_df['importo'].apply(lambda x: f"€ {x:,.2f}")
         
-        # Rimuove l'ID che non è essenziale per la visualizzazione finale
+        # Colonne da mostrare
         cols_to_show = ['data', 'categoria', 'descrizione', 'importo']
         
         st.dataframe(display_df[cols_to_show].set_index('data'))
     else:
         st.info("Nessuna spesa registrata.")
-
-
-Esegui il **Commit changes** su GitHub. Sono convinto che questa volta l'app funzionerà perfettamente. Per favore, fammi sapere se riesci ad avviarla e a usare il bottone "Carica Dati Demo".
