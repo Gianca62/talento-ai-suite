@@ -554,21 +554,23 @@ elif menu == "Amministrazione":
                 descrizione = st.text_area("Descrizione Spesa")
                 
                 if st.form_submit_button("Aggiungi Spesa", type="primary"):
-                    if importo > 0 and descrizione:
-                        nuova_spesa = {
-                            "data": data_spesa.strftime("%d/%m/%Y"),
-                            "categoria": categoria,
-                            "descrizione": descrizione,
-                            "importo": importo,
-                            "progetto": progetto,
-                            "detraibile": detraibile,
-                            "ricevuta": ricevuta
-                        }
-                        st.session_state.spese.append(nuova_spesa)
-                        st.success(f"Spesa di €{importo:.2f} aggiunta con successo!")
-                        st.rerun()
-                    else:
-                        st.error("Importo e descrizione sono obbligatori!")
+    if importo > 0 and descrizione:
+        
+        # Converitiamo la data nel formato richiesto dal database (YYYY-MM-DD)
+        data_db = data_spesa.strftime("%Y-%m-%d")
+        
+        # NUOVO SALVATAGGIO: Chiama la funzione di salvataggio sul database
+        if save_nuova_spesa(
+            descrizione, 
+            importo, 
+            categoria, 
+            data_db
+        ):
+            st.success(f"Spesa di €{importo:.2f} salvata in modo permanente!")
+            st.rerun()
+    else:
+        st.error("Importo e descrizione sono obbligatori!")
+
         
         with subtab2:
             st.subheader("Lista Spese")
@@ -1407,4 +1409,5 @@ elif menu == "Demo":
 st.markdown("""
 ---
 **TALENTO AI SUITE** - Versione Streamlit Plus | Creato da Giancarlo Tonon
+
 """)
