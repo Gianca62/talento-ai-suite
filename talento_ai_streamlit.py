@@ -255,9 +255,7 @@ def save_aggiorna_stato_preventivo(preventivo_id, nuovo_stato):
 
 def carica_dati_demo():
     """Carica dati demo direttamente nel database."""
-    
-    # Pulizia dati vecchi (opzionale, ma utile per i demo)
-    # Per semplicità non implementiamo il truncate qui, ma inseriamo solo i dati
+    from datetime import datetime # Necessario per usare datetime.now()
     
     # CLIENTE DEMO 1: Rossi Costruzioni
     save_nuovo_cliente(
@@ -276,7 +274,6 @@ def carica_dati_demo():
     )
 
     # PREVENTIVI DEMO (Assumiamo che i primi due clienti abbiano ID 1 e 2)
-    # Questa parte richiede che i clienti ID 1 e 2 esistano.
     save_nuovo_preventivo(1, "Progetto Ristrutturazione Uffici", 55000.00, "ACCETTATO", 0.35)
     save_nuovo_preventivo(2, "Consulenza Contrattuale", 8200.00, "INVIATO", 0.70)
     
@@ -568,5 +565,6 @@ elif menu == "Gestione Spese":
                         st.rerun()
                 else:
                     st.error("Importo e descrizione sono obbligatori!")
+
 
 
