@@ -1,171 +1,240 @@
-import streamlit as st
+import os
 from supabase import create_client, Client
-from typing import List, Dict, Any
+from dotenv import load_dotenv
+
+# Carica variabili d'ambiente
+load_dotenv()
 
 class SupabaseManager:
+    """Gestisce tutte le operazioni con Supabase"""
+    
     def __init__(self):
-        # Configurazione Supabase
-        self.url = st.secrets["SUPABASE_URL"]
-        self.key = st.secrets["SUPABASE_ANON_KEY"]
-        self.supabase: Client = create_client(self.url, self.key)
+        """Inizializza la connessione a Supabase"""
+        supabase_url = os.getenv("SUPABASE_URL")
+        supabase_key = os.getenv("SUPABASE_KEY")
+        
+        if not supabase_url or not supabase_key:
+            raise ValueError("SUPABASE_URL e SUPABASE_KEY devono essere configurati")
+        
+        self.supabase: Client = create_client(supabase_url, supabase_key)
     
-    # === GESTIONE CLIENTI ===
-    def get_clienti(self) -> List[Dict]:
-        """Recupera tutti i clienti"""
-        try:
-            response = self.supabase.table('clienti').select("*").execute()
-            return response.data
-        except Exception as e:
-            st.error(f"Errore nel recuperare clienti: {e}")
-            return []
-    
-    def add_cliente(self, cliente_data: Dict) -> bool:
-        """Aggiunge un nuovo cliente"""
-        try:
-            response = self.supabase.table('clienti').insert(cliente_data).execute()
-            return True
-        except Exception as e:
-            st.error(f"Errore nell'aggiungere cliente: {e}")
-            return False
-    
-    # === GESTIONE PREVENTIVI ===
-    def get_preventivi(self) -> List[Dict]:
-        """Recupera tutti i preventivi"""
-        try:
-            response = self.supabase.table('preventivi').select("*").execute()
-            return response.data
-        except Exception as e:
-            st.error(f"Errore nel recuperare preventivi: {e}")
-            return []
-    
-    def add_preventivo(self, preventivo_data: Dict) -> bool:
-        """Aggiunge un nuovo preventivo"""
-        try:
-            response = self.supabase.table('preventivi').insert(preventivo_data).execute()
-            return True
-        except Exception as e:
-            st.error(f"Errore nell'aggiungere preventivo: {e}")
-            return False
-    
-    def update_stato_preventivo(self, preventivo_numero: str, nuovo_stato: str) -> bool:
-        """Aggiorna lo stato di un preventivo"""
-        try:
-            response = self.supabase.table('preventivi').update({'stato': nuovo_stato}).eq('numero', preventivo_numero).execute()
-            return True
-        except Exception as e:
-            st.error(f"Errore nell'aggiornare stato preventivo: {e}")
-            return False
-    
-    # === GESTIONE SPESE ===
-    def get_spese(self) -> List[Dict]:
-        """Recupera tutte le spese"""
-        try:
-            response = self.supabase.table('spese').select("*").execute()
-            return response.data
-        except Exception as e:
-            st.error(f"Errore nel recuperare spese: {e}")
-            return []
-    
-    def add_spesa(self, spesa_data: Dict) -> bool:
-        """Aggiunge una nuova spesa"""
-        try:
-            response = self.supabase.table('spese').insert(spesa_data).execute()
-            return True
-        except Exception as e:
-            st.error(f"Errore nell'aggiungere spesa: {e}")
-            return False
-    
-    # === GESTIONE SCADENZE ===
-    def get_scadenze(self) -> List[Dict]:
-        """Recupera tutte le scadenze"""
-        try:
-            response = self.supabase.table('scadenze').select("*").execute()
-            return response.data
-        except Exception as e:
-            st.error(f"Errore nel recuperare scadenze: {e}")
-            return []
-    
-    def add_scadenza(self, scadenza_data: Dict) -> bool:
-        """Aggiunge una nuova scadenza"""
-        try:
-            response = self.supabase.table('scadenze').insert(scadenza_data).execute()
-            return True
-        except Exception as e:
-            st.error(f"Errore nell'aggiungere scadenza: {e}")
-            return False
-    
-    # === GESTIONE EVENTI CALENDARIO ===
-    def get_eventi_calendario(self) -> List[Dict]:
-        """Recupera tutti gli eventi del calendario"""
-        try:
-            response = self.supabase.table('eventi_calendario').select("*").execute()
-            return response.data
-        except Exception as e:
-            st.error(f"Errore nel recuperare eventi: {e}")
-            return []
-    
-    def add_evento_calendario(self, evento_data: Dict) -> bool:
-        """Aggiunge un nuovo evento al calendario"""
-        try:
-            response = self.supabase.table('eventi_calendario').insert(evento_data).execute()
-            return True
-        except Exception as e:
-            st.error(f"Errore nell'aggiungere evento: {e}")
-            return False
-
-    # === UTILITY ===
-    def test_connection(self) -> bool:
+    def test_connection(self):
         """Testa la connessione a Supabase"""
         try:
-            response = self.supabase.table('clienti').select("count", count="exact").execute()
+            response = self.supabase.table("clienti").select("count", count="exact").execute()
             return True
         except Exception as e:
-            st.error(f"Errore di connessione a Supabase: {e}")
+            print(f"Errore connessione: {e}")
             return False
     
-    def init_demo_data(self):
-        """Inizializza dati demo nel database"""
-        # Clienti demo
-        clienti_demo = [
-            {
-                "nome": "Rossi Costruzioni SRL",
-                "email": "info@rossicost.it",
-                "telefono": "0421-123456",
-                "note": "Cliente storico, sempre puntuale nei pagamenti",
-                "data_creazione": "15/12/2024"
-            },
-            {
-                "nome": "Studio Legale Bianchi",
-                "email": "avv.bianchi@legal.it",
-                "telefono": "339-987654",
-                "note": "Specialisti in diritto commerciale",
-                "data_creazione": "10/12/2024"
+    # ==================== CLIENTI ====================
+    
+    def add_cliente(self, cliente):
+        """Aggiunge un nuovo cliente"""
+        try:
+            response = self.supabase.table("clienti").insert(cliente).execute()
+            return True
+        except Exception as e:
+            print(f"Errore add_cliente: {e}")
+            return False
+    
+    def get_clienti(self):
+        """Recupera tutti i clienti"""
+        try:
+            response = self.supabase.table("clienti").select("*").execute()
+            return response.data if response.data else []
+        except Exception as e:
+            print(f"Errore get_clienti: {e}")
+            return []
+    
+    def update_cliente(self, cliente_id, updates):
+        """Aggiorna un cliente esistente"""
+        try:
+            response = self.supabase.table("clienti").update(updates).eq("id", cliente_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore update_cliente: {e}")
+            return False
+    
+    def delete_cliente(self, cliente_id):
+        """Elimina un cliente"""
+        try:
+            response = self.supabase.table("clienti").delete().eq("id", cliente_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore delete_cliente: {e}")
+            return False
+    
+    # ==================== PREVENTIVI ====================
+    
+    def add_preventivo(self, preventivo):
+        """Aggiunge un nuovo preventivo"""
+        try:
+            response = self.supabase.table("preventivi").insert(preventivo).execute()
+            return True
+        except Exception as e:
+            print(f"Errore add_preventivo: {e}")
+            return False
+    
+    def get_preventivi(self):
+        """Recupera tutti i preventivi"""
+        try:
+            response = self.supabase.table("preventivi").select("*").execute()
+            return response.data if response.data else []
+        except Exception as e:
+            print(f"Errore get_preventivi: {e}")
+            return []
+    
+    def update_preventivo(self, preventivo_id, updates):
+        """Aggiorna un preventivo esistente"""
+        try:
+            response = self.supabase.table("preventivi").update(updates).eq("id", preventivo_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore update_preventivo: {e}")
+            return False
+    
+    def delete_preventivo(self, preventivo_id):
+        """Elimina un preventivo"""
+        try:
+            response = self.supabase.table("preventivi").delete().eq("id", preventivo_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore delete_preventivo: {e}")
+            return False
+    
+    # ==================== SPESE ====================
+    
+    def add_spesa(self, spesa):
+        """Aggiunge una nuova spesa"""
+        try:
+            response = self.supabase.table("spese").insert(spesa).execute()
+            return True
+        except Exception as e:
+            print(f"Errore add_spesa: {e}")
+            return False
+    
+    def get_spese(self):
+        """Recupera tutte le spese"""
+        try:
+            response = self.supabase.table("spese").select("*").order("data", desc=True).execute()
+            return response.data if response.data else []
+        except Exception as e:
+            print(f"Errore get_spese: {e}")
+            return []
+    
+    def update_spesa(self, spesa_id, updates):
+        """Aggiorna una spesa esistente"""
+        try:
+            response = self.supabase.table("spese").update(updates).eq("id", spesa_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore update_spesa: {e}")
+            return False
+    
+    def delete_spesa(self, spesa_id):
+        """Elimina una spesa"""
+        try:
+            response = self.supabase.table("spese").delete().eq("id", spesa_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore delete_spesa: {e}")
+            return False
+    
+    # ==================== SCADENZE ====================
+    
+    def add_scadenza(self, scadenza):
+        """Aggiunge una nuova scadenza"""
+        try:
+            response = self.supabase.table("scadenze").insert(scadenza).execute()
+            return True
+        except Exception as e:
+            print(f"Errore add_scadenza: {e}")
+            return False
+    
+    def get_scadenze(self):
+        """Recupera tutte le scadenze"""
+        try:
+            response = self.supabase.table("scadenze").select("*").order("data", desc=False).execute()
+            return response.data if response.data else []
+        except Exception as e:
+            print(f"Errore get_scadenze: {e}")
+            return []
+    
+    def update_scadenza(self, scadenza_id, updates):
+        """Aggiorna una scadenza esistente"""
+        try:
+            response = self.supabase.table("scadenze").update(updates).eq("id", scadenza_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore update_scadenza: {e}")
+            return False
+    
+    def delete_scadenza(self, scadenza_id):
+        """Elimina una scadenza"""
+        try:
+            response = self.supabase.table("scadenze").delete().eq("id", scadenza_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore delete_scadenza: {e}")
+            return False
+    
+    # ==================== EVENTI CALENDARIO ====================
+    
+    def add_evento_calendario(self, evento):
+        """Aggiunge un evento al calendario"""
+        try:
+            response = self.supabase.table("eventi_calendario").insert(evento).execute()
+            return True
+        except Exception as e:
+            print(f"Errore add_evento_calendario: {e}")
+            return False
+    
+    def get_eventi_calendario(self):
+        """Recupera tutti gli eventi dal calendario"""
+        try:
+            response = self.supabase.table("eventi_calendario").select("*").order("data", desc=False).execute()
+            return response.data if response.data else []
+        except Exception as e:
+            print(f"Errore get_eventi_calendario: {e}")
+            return []
+    
+    def update_evento_calendario(self, evento_id, updates):
+        """Aggiorna un evento del calendario"""
+        try:
+            response = self.supabase.table("eventi_calendario").update(updates).eq("id", evento_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore update_evento_calendario: {e}")
+            return False
+    
+    def delete_evento_calendario(self, evento_id):
+        """Elimina un evento dal calendario"""
+        try:
+            response = self.supabase.table("eventi_calendario").delete().eq("id", evento_id).execute()
+            return True
+        except Exception as e:
+            print(f"Errore delete_evento_calendario: {e}")
+            return False
+    
+    # ==================== UTILITY ====================
+    
+    def get_statistiche(self):
+        """Recupera statistiche generali"""
+        try:
+            clienti = len(self.get_clienti())
+            preventivi = len(self.get_preventivi())
+            spese_totali = sum(s.get('importo', 0) for s in self.get_spese())
+            scadenze_attive = len([s for s in self.get_scadenze() if s.get('stato') == 'Attiva'])
+            eventi_programmati = len(self.get_eventi_calendario())
+            
+            return {
+                "clienti": clienti,
+                "preventivi": preventivi,
+                "spese_totali": spese_totali,
+                "scadenze_attive": scadenze_attive,
+                "eventi_programmati": eventi_programmati
             }
-        ]
-        
-        # Preventivi demo
-        preventivi_demo = [
-            {
-                "numero": "PREV-001",
-                "cliente": "Rossi Costruzioni SRL",
-                "note": "Ristrutturazione bagno completa",
-                "stato": "ACCETTATO",
-                "data_creazione": "18/12/2024",
-                "totale": 1970
-            },
-            {
-                "numero": "OFF-002",
-                "cliente": "Studio Legale Bianchi",
-                "note": "Consulenza privacy per studio legale",
-                "stato": "INVIATO",
-                "data_creazione": "20/12/2024",
-                "totale": 1540
-            }
-        ]
-        
-        # Inserisci dati demo
-        for cliente in clienti_demo:
-            self.add_cliente(cliente)
-        
-        for preventivo in preventivi_demo:
-            self.add_preventivo(preventivo)
+        except Exception as e:
+            print(f"Errore get_statistiche: {e}")
+            return {}

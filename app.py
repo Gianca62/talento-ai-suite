@@ -482,7 +482,7 @@ elif menu == "Amministrazione":
                 st.info("Nessuna scadenza registrata. Aggiungi la prima scadenza!")
     
     with tab3:
-        st.subheader("Calendario Lavori")
+        st.subheader("📅 Calendario Lavori")
         
         subtab1, subtab2 = st.tabs(["Aggiungi Evento", "Vista Eventi"])
         
@@ -578,7 +578,7 @@ elif menu == "Amministrazione":
                 except:
                     st.error("Errore nel visualizzare eventi")
             else:
-                st.info("Nessun evento programmato")
+                st.info("Nessun evento programmato. Aggiungi il primo evento!")
 
 # DEMO
 elif menu == "Demo":
@@ -588,9 +588,9 @@ elif menu == "Demo":
     
     if st.button("Test Connessione"):
         if db.test_connection():
-            st.success("Connessione a Supabase funziona!")
+            st.success("✅ Connessione a Supabase funziona!")
         else:
-            st.error("Errore connessione")
+            st.error("❌ Errore connessione")
     
     st.markdown("### Carica Dati Demo Completi")
     st.markdown("Carica un set completo di dati interconnessi per testare tutte le funzionalità:")
@@ -761,23 +761,23 @@ elif menu == "Demo":
             st.session_state.clienti = db.get_clienti()
             st.session_state.preventivi = db.get_preventivi()
             
-            st.success("Dati demo completi caricati con successo!")
+            st.success("✅ Dati demo completi caricati con successo!")
             st.info("Ora puoi esplorare tutte le sezioni: Dashboard, Analytics, Amministrazione (Spese, Scadenze, Calendario), Reports")
             st.balloons()
             st.rerun()
             
         except Exception as e:
-            st.error(f"Errore nel caricare dati demo: {e}")
+            st.error(f"❌ Errore nel caricare dati demo: {e}")
     
     st.markdown("### Gestione Dati")
     
     if st.button("🔄 Ricarica Dati dal Database"):
         st.session_state.clienti = db.get_clienti()
         st.session_state.preventivi = db.get_preventivi()
-        st.success(f"Ricaricati: {len(st.session_state.clienti)} clienti, {len(st.session_state.preventivi)} preventivi")
+        st.success(f"✅ Ricaricati: {len(st.session_state.clienti)} clienti, {len(st.session_state.preventivi)} preventivi")
     
     if st.button("🗑️ Elimina Tutti i Dati Demo", type="secondary"):
-        st.warning("Funzione non implementata per sicurezza. Puoi eliminare i dati manualmente da Supabase se necessario.")
+        st.warning("⚠️ Funzione non implementata per sicurezza. Puoi eliminare i dati manualmente da Supabase se necessario.")
     
     st.markdown("### Informazioni Sistema")
     st.markdown("""
@@ -791,12 +791,13 @@ elif menu == "Demo":
     - ✅ Amministrazione:
         - ✅ Nota Spese con categorie e grafici
         - ✅ Scadenze con alert colorati
-        - ✅ Calendario Eventi
+        - ✅ Calendario Eventi completo
     - ✅ Reports & Export con metriche finanziarie
     - ✅ Database Supabase persistente
     
     Tutti i dati sono salvati permanentemente e condivisibili.
     """)
+
 # Footer
 st.markdown("""
 ---
